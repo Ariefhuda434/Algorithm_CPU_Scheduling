@@ -1,93 +1,68 @@
 from collections import deque
 
 processes = [
-    ["P1", 0, 7],
-    ["P2", 1, 4],
-    ["P3", 2, 1],
-    ["P4", 3, 4]
+    ["P1", 0, 8], ["P2", 1, 4], ["P3", 2, 9], ["P4", 3, 5],
+    ["P5", 4, 2], ["P6", 6, 6], ["P7", 7, 3], ["P8", 8, 7]
 ]
 
 quantum = 3
-
-remaining = {}
+remaining = {p[0]: p[2] for p in processes}
 response = {}
-
-# Variabel total
-total_wt = 0
-total_tat = 0
-total_rt = 0
-
-for p in processes:
-    remaining[p[0]] = p[2]
-
-queue = deque()
 time = 0
 finished = 0
+queue = deque()
+total_wt = total_tat = total_rt = 0
+gantt_chart_str = ""
 
-print("Gantt Chart:")
+in_queue = {p[0]: False for p in processes}
+
+print("=== PROSES EKSEKUSI (ROUND ROBIN) ===")
 
 while finished < len(processes):
-
     for p in processes:
-        if p[1] <= time and p not in queue and remaining[p[0]] > 0:
+        if p[1] <= time and not in_queue[p[0]] and remaining[p[0]] > 0:
             queue.append(p)
+            in_queue[p[0]] = True
 
-    if len(queue) == 0:
+    if not queue:
         time += 1
         continue
 
     current = queue.popleft()
-
-    pid = current[0]
-    at = current[1]
-    bt = current[2]
+    pid, at, bt = current[0], current[1], current[2]
 
     if pid not in response:
         response[pid] = time - at
 
     run = min(quantum, remaining[pid])
-
-    print(f"| {pid} ({time}-{time+run}) |")
-
+    start = time
     time += run
     remaining[pid] -= run
+    gantt_chart_str += f"| {pid} ({start}-{time}) "
 
     for p in processes:
-        if p[1] <= time and p not in queue and remaining[p[0]] > 0 and p != current:
+        if p[1] <= time and not in_queue[p[0]] and remaining[p[0]] > 0:
             queue.append(p)
+            in_queue[p[0]] = True
 
     if remaining[pid] > 0:
         queue.append(current)
-
     else:
-
         ct = time
         tat = ct - at
         wt = tat - bt
         rt = response[pid]
-
-        # Menjumlahkan total
         total_wt += wt
         total_tat += tat
         total_rt += rt
-
-        print(pid)
-        print("CT :", ct)
-        print("TAT:", tat)
-        print("WT :", wt)
-        print("RT :", rt)
-        print()
-
+        print(f"Proses {pid} -> CT: {ct} | TAT: {tat} | WT: {wt} | RT: {rt}")
         finished += 1
 
-# Menghitung average
+print("\nVisualisasi Gantt Chart:")
+print(gantt_chart_str + "|")
+
 n = len(processes)
-
-avg_wt = total_wt / n
-avg_tat = total_tat / n
-avg_rt = total_rt / n
-
-print("===== AVERAGE =====")
-print("Average Waiting Time     :", round(avg_wt, 2))
-print("Average Turn Around Time :", round(avg_tat, 2))
-print("Average Response Time    :", round(avg_rt, 2))
+print("\n===== AVERAGE =====")
+print(f"Average Waiting Time     : {round(total_wt / n, 3)}")
+print(f"Average Turn Around Time : {round(total_tat / n, 3)}")
+print(f"Average Response Time    : {round(total_rt / n, 3)}")

@@ -1,83 +1,72 @@
 processes = [
-    ["P1", 0, 7],
-    ["P2", 1, 4],
-    ["P3", 2, 1],
-    ["P4", 3, 4]
+    ["P1", 0, 8], ["P2", 1, 4], ["P3", 2, 9], ["P4", 3, 5],
+    ["P5", 4, 2], ["P6", 6, 6], ["P7", 7, 3], ["P8", 8, 7]
 ]
 
-remaining = {}
+n = len(processes)
+remaining = {p[0]: p[2] for p in processes}
 response = {}
-
-# Variabel total
-total_wt = 0
-total_tat = 0
-total_rt = 0
-
-for p in processes:
-    remaining[p[0]] = p[2]
+finish_data = [] 
 
 time = 0
 finished = 0
+last_pid = None
+gantt_chart_str = ""
 
-print("Gantt Chart:")
+print("=== PROSES EKSEKUSI (SRTF) ===")
 
-while finished < len(processes):
-
-    ready = []
-
-    for p in processes:
-        if p[1] <= time and remaining[p[0]] > 0:
-            ready.append(p)
+while finished < n:
+    ready = [p for p in processes if p[1] <= time and remaining[p[0]] > 0]
 
     if len(ready) == 0:
         time += 1
         continue
 
-    # Memilih remaining time terkecil
     current = min(ready, key=lambda x: remaining[x[0]])
-
     pid = current[0]
     at = current[1]
+    bt = current[2]
 
     if pid not in response:
         response[pid] = time - at
 
-    print(f"| {pid} ({time}-{time+1}) |")
-
+    if pid != last_pid:
+        gantt_chart_str += f"| {pid} ({time}-"
+    
     remaining[pid] -= 1
     time += 1
+    
+    if pid != last_pid:
+        pass
+    
+    next_ready = [p for p in processes if p[1] <= time and remaining[p[0]] > 0]
+    next_pid = None
+    if next_ready:
+        next_pid = min(next_ready, key=lambda x: remaining[x[0]])[0]
+
+    if next_pid != pid or remaining[pid] == 0:
+        gantt_chart_str += f"{time}) "
 
     if remaining[pid] == 0:
-
         ct = time
-        bt = current[2]
-
         tat = ct - at
         wt = tat - bt
         rt = response[pid]
-
-        # Menjumlahkan total
-        total_wt += wt
-        total_tat += tat
-        total_rt += rt
-
-        print(pid)
-        print("CT :", ct)
-        print("TAT:", tat)
-        print("WT :", wt)
-        print("RT :", rt)
-        print()
-
+        
+        finish_data.append([pid, at, bt, ct, tat, wt, rt])
+        print(f"Proses {pid} -> CT: {ct} | TAT: {tat} | WT: {wt} | RT: {rt}")
         finished += 1
 
-# Menghitung average
-n = len(processes)
+    last_pid = pid
 
-avg_wt = total_wt / n
-avg_tat = total_tat / n
-avg_rt = total_rt / n
+print("\nVisualisasi Gantt Chart:")
+print(gantt_chart_str + "|")
 
-print("===== AVERAGE =====")
-print("Average Waiting Time     :", round(avg_wt, 2))
-print("Average Turn Around Time :", round(avg_tat, 2))
-print("Average Response Time    :", round(avg_rt, 2))
+total_wt = sum(d[5] for d in finish_data)
+total_tat = sum(d[4] for d in finish_data)
+total_rt = sum(d[6] for d in finish_data)
+
+print("\n===== AVERAGE =====")
+print(f"Average Waiting Time     : {round(total_wt / n, 3)}")
+print(f"Average Turn Around Time : {round(total_tat / n, 3)}")
+print(f"Average Response Time    : {round(total_rt / n, 3)}")
