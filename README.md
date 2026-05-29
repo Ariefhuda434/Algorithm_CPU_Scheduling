@@ -84,7 +84,3 @@ Project ini membantu memahami konsep:
 Developed by Arief Huda | Bill Randa Silangit
 
 ---
-
-# 📄 License
-
-Project ini menggunakan lisensi MIT License.
